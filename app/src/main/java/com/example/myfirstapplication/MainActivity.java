@@ -6,6 +6,7 @@ import androidx.fragment.app.DialogFragment;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
+import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Message;
@@ -14,28 +15,46 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
+    private NotesDbAdapter mDbHelper;
+    ListView list ;
+    List<String> todoItems;
+     EditText text;
+    ArrayAdapter aa;
+    int darkMode = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final Button addButton = findViewById(R.id.button_id);
+        list = findViewById(R.id.listview);
+
+        final Button addButton = findViewById(R.id.button);
         addButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 addItem();
             }
         });
 
-        final EditText text = (EditText)findViewById(R.id.inputText);
+        text = findViewById(R.id.editText);
 
+        todoItems = new ArrayList<String>();
+
+        aa = new ArrayAdapter(this, android.R.layout.simple_list_item_1, todoItems);
 
         text.setOnKeyListener(new View.OnKeyListener() {
             public boolean onKey(View v, int keyCode, KeyEvent event) {
@@ -46,27 +65,48 @@ public class MainActivity extends AppCompatActivity {
                     }
                 return false;
             }
-        }) ;
+        });
+        list.setAdapter(aa);
 
+        mDbHelper = new NotesDbAdapter(this);
+        mDbHelper.open();
+        fillData();
 
+        list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                text = findViewById(R.id.editText);
+                todoItems.remove(position);
+                aa.notifyDataSetChanged();
+                mDbHelper.createNote(text.getText().toString(),"");
+                fillData();
 
-
+                text.setText("");
+            }
+        });
     }
 
 
+
+
+
+
+
     public void addItem() {
-        CheckBox checkbox = new CheckBox(getApplicationContext());
+        /*CheckBox checkbox = new CheckBox(getApplicationContext());
         checkbox.setTextColor(Color.BLACK);
 
         EditText text = (EditText)findViewById(R.id.inputText);
         String value = text.getText().toString().substring(0, 1).toUpperCase() + text.getText().toString().substring(1).toLowerCase();
 
-        checkbox.setText(value);
-        text.setText("");
-        text.requestFocus();
 
-        final LinearLayout linearLayout = (LinearLayout)findViewById(R.id.IdLinearLayout);
-        linearLayout.addView(checkbox);
+        text.setText("");
+        text.requestFocus();*/
+
+        todoItems.add(0, text.getText().toString().substring(0, 1).toUpperCase() + text.getText().toString().substring(1).toLowerCase());
+        aa.notifyDataSetChanged();
+
+
     }
 
 
@@ -86,7 +126,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.about:
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle("À propos");
+                builder.setTitle("À propos \uD83D\uDC68\u200D\uD83D\uDCBB");
                 builder.setMessage("\nAuteur : Noah Châtelain\nApprenti développeur");
 
                 builder.setNegativeButton("Fermer \uD83D\uDE04", null);
@@ -98,6 +138,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void fillData() {
+        // Get all of the notes from the database and create the item list
+      /*  Cursor c = mDbHelper.fetchAllNotes();
+        startManagingCursor(c);
+
+        String[] from = new String[] { NotesDbAdapter.KEY_TITLE };
+        int[] to = new int[] { R.id.text1 };
+
+        // Now create an array adapter and set it to display using our row
+        SimpleCursorAdapter notes =
+                new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
+        list.setAdapter(notes);
+
+       */
+    }
+
     public void deleteAll() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Effacer tout");
@@ -105,8 +161,8 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Oui", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                final LinearLayout linearLayout = (LinearLayout)findViewById(R.id.IdLinearLayout);
-                ((LinearLayout) linearLayout).removeAllViews();
+                todoItems.clear();
+                aa.notifyDataSetChanged();
             }
         });
         builder.setNegativeButton("Non", null);

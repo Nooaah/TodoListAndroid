@@ -7,8 +7,10 @@
         <item name="colorPrimary">#e74c3c</item>
         <item name="colorControlActivated">#e74c3c</item>
         <item name="colorAccent">#e74c3c</item>
+    </style>
 
-
+    <style name="darkMode" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:windowBackground">#1E1E1E</item>
     </style>
 
 </resources>
