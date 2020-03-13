@@ -33,13 +33,18 @@ public class MainActivity extends AppCompatActivity {
     private NotesDbAdapter mDbHelper;
     ListView list ;
     List<String> todoItems;
-     EditText text;
+    EditText text;
     ArrayAdapter aa;
     int darkMode = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //Création de la BDD
+        mDbHelper = new NotesDbAdapter(this);
+        mDbHelper.open();
+        fillData();
 
         list = findViewById(R.id.listview);
 
@@ -68,22 +73,24 @@ public class MainActivity extends AppCompatActivity {
         });
         list.setAdapter(aa);
 
-        mDbHelper = new NotesDbAdapter(this);
-        mDbHelper.open();
-        fillData();
-
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                text = findViewById(R.id.editText);
+                /*
                 todoItems.remove(position);
                 aa.notifyDataSetChanged();
                 mDbHelper.createNote(text.getText().toString(),"");
                 fillData();
 
                 text.setText("");
+
+                 */
+                mDbHelper.deleteNote(id);
+                fillData();
             }
         });
+
+        fillData();
     }
 
 
@@ -103,12 +110,32 @@ public class MainActivity extends AppCompatActivity {
         text.setText("");
         text.requestFocus();*/
 
+        /*
         todoItems.add(0, text.getText().toString().substring(0, 1).toUpperCase() + text.getText().toString().substring(1).toLowerCase());
         aa.notifyDataSetChanged();
+*/
+
+        String msg = text.getText().toString();
+        mDbHelper.createNote(msg,"");
+        fillData();
+        text.setText("");
 
 
     }
 
+    private void fillData() {
+        final ListView listview = (ListView) findViewById(R.id.listview);
+
+        Cursor c = mDbHelper.fetchAllNotes();
+        startManagingCursor(c);
+
+        String[] from = new String[] { NotesDbAdapter.KEY_TITLE };
+        int[] to = new int[] { R.id.text1 };
+
+        SimpleCursorAdapter notes =
+                new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
+        listview.setAdapter(notes);
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -138,21 +165,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void fillData() {
-        // Get all of the notes from the database and create the item list
-      /*  Cursor c = mDbHelper.fetchAllNotes();
-        startManagingCursor(c);
-
-        String[] from = new String[] { NotesDbAdapter.KEY_TITLE };
-        int[] to = new int[] { R.id.text1 };
-
-        // Now create an array adapter and set it to display using our row
-        SimpleCursorAdapter notes =
-                new SimpleCursorAdapter(this, R.layout.notes_row, c, from, to);
-        list.setAdapter(notes);
-
-       */
-    }
 
     public void deleteAll() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -161,8 +173,10 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Oui", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                System.out.println("tsess##########");
                 todoItems.clear();
                 aa.notifyDataSetChanged();
+                fillData();
             }
         });
         builder.setNegativeButton("Non", null);
